@@ -26,5 +26,12 @@ class DataBase:
     def check_chat_id(self, id):
         return self.query(f"SELECT * FROM client WHERE chat_id={int(id)}", True)
 
-    def insert_into_users(self, id):
+    def insert_into_client_chat_id(self, id):
         return self.query(f"INSERT INTO client (chat_id) VALUES ({int(id)})")
+
+    def insert_into_client_name(self, id, name):
+        return self.query(f"UPDATE client set name='{name}' WHERE chat_id={int(id)}")
+
+    def insert_into_client_courier(self, id, is_courier=False):
+        return self.query(f"UPDATE client SET is_courier={is_courier} WHERE chat_id={int(id)}")
+

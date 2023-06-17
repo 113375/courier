@@ -1,8 +1,13 @@
+from aiogram.dispatcher import FSMContext
 from dotenv import dotenv_values
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from database import DataBase
+import memstorage
 import markups
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+
+storage = MemoryStorage()
 
 config = dotenv_values(".env")
 
@@ -11,40 +16,54 @@ API_TOKEN = config["token"]
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot=bot, storage=MemoryStorage())
 
 data = DataBase(config["dbname"], config["login"], config["password"], config["postgres"], config["port"])
 
 
 def in_data_base(id) -> bool:
-    print(data.check_chat_id(id))
     return data.check_chat_id(id) != []
 
 
-async def greeting(message):
-    await message.reply("Здравствуйте.")
-
-
-@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     if not in_data_base(message.from_user.id):
-        await message.answer("Добрый день, начало работы с ботом по работе с курьерами.",
+        data.insert_into_client_chat_id(message.from_user.id)
+        await message.answer("Здравствуйте, вас приветствует бот по работе с курьерами.",
                              reply_markup=markups.Registration())
-        data.insert_into_users(message.from_user.id)
+        await memstorage.Registration.begin.set()
 
 
-@dp.message_handler(commands=['registration'])
-async def registration(message: types.Message):
-    async def full_name() -> None:
-        pass
-
-    async def courier() -> None:
-        pass
+@dp.message_handler(state=memstorage.Registration.begin)
+async def start_registration(message: types.Message):
+    await message.answer("Напишите ваше имя:")
+    await memstorage.Registration.name.set()
 
 
-# @dp.message_handler()
-# async def echo(message: types.Message):
-#     await message.answer(message.text)
+@dp.message_handler(state=memstorage.Registration.name)
+async def reg_name(message: types.Message):
+    name = message.text.title()
+    data.insert_into_client_name(message.from_user.id, name)
+    await message.answer("Вы являетесь курьером?", reply_markup=markups.IsCourierButtons())
+    await memstorage.Registration.courier.set()
+
+
+async def end_registration(message, state):
+    await message.answer("Регистрация завершена.")
+    await state.finish()
+
+
+@dp.message_handler(state=memstorage.Registration.courier)
+async def add_is_courier(message: types.Message, state: FSMContext):
+    match message.text.lower():
+        case "да":
+            data.insert_into_client_courier(message.from_user.id, True)
+            await end_registration(message, state)
+        case "нет":
+            data.insert_into_client_courier(message.from_user.id, False)
+            await end_registration(message, state)
+        case _:
+            await message.reply("Неверное значение, выберите из кнопок")
 
 
 if __name__ == '__main__':
