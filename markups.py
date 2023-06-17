@@ -9,9 +9,23 @@ def Registration():
 
 
 def IsCourierButtons():
-    choice = InlineKeyboardMarkup()
-    yes_button = InlineKeyboardButton("Да", callback_data="is_courier_true")
-    no_button = InlineKeyboardButton("Нет", callback_data="is_courier_false")
-    choice.add(yes_button, no_button)
-    return choice
+    yes = KeyboardButton("Да")
+    no = KeyboardButton("Нет")
+    menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    menu.add(yes, no)
+    return menu
 
+
+def MenuButtons():
+    menu = ReplyKeyboardMarkup(resize_keyboard=True)
+    settings_button = KeyboardButton("Настройки")
+    create_delivery = KeyboardButton("Создать доставку")
+    menu.add(create_delivery, settings_button)
+    return menu
+
+def SettingsInlineButtons():
+    choice = InlineKeyboardMarkup()
+    change_name_button = InlineKeyboardButton("Имя", callback_data="change_name")
+    change_courier_button = InlineKeyboardButton("Курьерство", callback_data="change_courier")
+    choice.add(change_courier_button, change_name_button)
+    
