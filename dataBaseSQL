@@ -1,0 +1,28 @@
+CREATE TABLE IF NOT EXISTS public.delivery
+(
+    delivery_id numeric NOT NULL,
+    user_id integer,
+    courier_id integer,
+    delivery_from text COLLATE pg_catalog."default",
+    delivery_to text COLLATE pg_catalog."default",
+    CONSTRAINT delivery_pkey PRIMARY KEY (delivery_id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.delivery
+    OWNER to dima;
+
+
+   CREATE TABLE IF NOT EXISTS public.client
+(
+    is_courier boolean,
+    chat_id integer NOT NULL,
+    name text COLLATE pg_catalog."default",
+    CONSTRAINT client_pkey PRIMARY KEY (chat_id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.client
+    OWNER to dima;
