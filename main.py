@@ -27,7 +27,8 @@ def in_data_base(id) -> bool:
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    if not in_data_base(message.from_user.id):
+    check = in_data_base(message.from_user.id)
+    if not check:
         data.insert_into_client_chat_id(message.from_user.id)
         await message.answer("Здравствуйте, вас приветствует бот по работе с курьерами.",
                              reply_markup=markups.Registration())
@@ -41,29 +42,21 @@ async def start_registration(message: types.Message):
 
 
 @dp.message_handler(state=memstorage.Registration.name)
-async def reg_name(message: types.Message):
+async def reg_name(message: types.Message, state: FSMContext):
     name = message.text.title()
     data.insert_into_client_name(message.from_user.id, name)
     await message.answer("Вы являетесь курьером?", reply_markup=markups.IsCourierButtons())
     await memstorage.Registration.courier.set()
 
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith('is_courier'), state=memstorage.Registration.courier)
+async def add_is_courier(callback_query: types.CallbackQuery):
+    result = (callback_query.data.split("_")[2] == "true")
+    print(callback_query.data.split("_")[2])
+    # data.insert_into_client_courier(message.from_user.id, result)
 
-async def end_registration(message, state):
-    await message.answer("Регистрация завершена.")
-    await state.finish()
 
 
-@dp.message_handler(state=memstorage.Registration.courier)
-async def add_is_courier(message: types.Message, state: FSMContext):
-    match message.text.lower():
-        case "да":
-            data.insert_into_client_courier(message.from_user.id, True)
-            await end_registration(message, state)
-        case "нет":
-            data.insert_into_client_courier(message.from_user.id, False)
-            await end_registration(message, state)
-        case _:
-            await message.reply("Неверное значение, выберите из кнопок")
+
 
 
 if __name__ == '__main__':
