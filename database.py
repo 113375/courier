@@ -34,4 +34,3 @@ class DataBase:
 
     def insert_into_client_courier(self, id, is_courier=False):
         return self.query(f"UPDATE client SET is_courier={is_courier} WHERE chat_id={int(id)}")
-

@@ -6,6 +6,9 @@ class Registration(StatesGroup):
     name = State()
     courier = State()
 
-class ChangeName(StatesGroup):
+
+class Changing(StatesGroup):
     begin = State()
-    changeDataBase = State()
+    changeName = State()
+    changeCourier = State()
+

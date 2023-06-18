@@ -23,10 +23,10 @@ def MenuButtons():
     menu.add(create_delivery, settings_button)
     return menu
 
+
 def SettingsInlineButtons():
     choice = InlineKeyboardMarkup()
     change_name_button = InlineKeyboardButton("Имя", callback_data="change_name")
     change_courier_button = InlineKeyboardButton("Курьерство", callback_data="change_courier")
     choice.add(change_courier_button, change_name_button)
     return choice
-    
