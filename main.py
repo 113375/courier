@@ -67,30 +67,47 @@ async def add_is_courier(message: types.Message, state: FSMContext):
             await message.reply("Неверное значение.")
 
 
+async def delete_delivery(message, state):
+    await state.finish()
+    await message.answer("Создание доставки отменено.")
+    data.delete_delivery(message.from_user.id)
+
+
+@dp.message_handler(state=memstorage.MakeDelivery.deliveryDescription)
+async def set_delivery_description(message: types.Message, state: FSMContext):
+    if message.text.lower() != "отменить":
+        text = message.text
+        data.add_description(data.get_delivery_id(message.from_user.id), text)
+        await message.answer("Доставка создана, когда курьер его примет, вам придет уведомление.",
+                             reply_markup=markups.MenuButtons())
+        await state.finish()
+    else:
+        await delete_delivery(message, state)
+
+
 @dp.message_handler(state=memstorage.MakeDelivery.deliveryTo, content_types=['location', "text"])
-async def set_location_from(message: types.Message, state: FSMContext):
-    try:
+async def set_location_to(message: types.Message, state: FSMContext):
+    if message.content_type != "text":
         delivery_id = data.get_delivery_id(message.from_user.id)
         data.add_location_to(delivery_id, message.location.latitude, message.location.longitude)
-        # await memstorage.MakeDelivery.deliveryTo.set()
-    except Exception as e:
+        await message.answer(
+            "Введите описание заказа: что забрать, картинки к заказу, и так далее (В одном сообщении).")
+        await memstorage.MakeDelivery.deliveryDescription.set()
+    else:
         if message.text.lower() == "отменить":
-            await state.finish()
-            await message.answer("Создание доставки отменено.")
-            await data.delete_delivery(message.from_user.id)
+            await delete_delivery(message, state)
 
 
 @dp.message_handler(state=memstorage.MakeDelivery.deliveryFrom, content_types=['location', "text"])
 async def set_location_from(message: types.Message, state: FSMContext):
-    try:
+    if message.content_type != "text":
         data.add_location_from(message.from_user.id, message.location.latitude, message.location.longitude)
         await message.answer("Отправьте геолокацию, куда нужно доставить заказ.")
         await memstorage.MakeDelivery.deliveryTo.set()
-    except Exception as e:
+    else:
         if message.text.lower() == "отменить":
             await state.finish()
-            await message.answer("Создание доставки отменено.")
-            # await data.delete_delivery(message.from_user.id)
+            await message.answer("Создание доставки отменено.", reply_markup=markups.MenuButtons())
 
 
 @dp.message_handler()

@@ -16,3 +16,4 @@ class Changing(StatesGroup):
 class MakeDelivery(StatesGroup):
     deliveryFrom = State()
     deliveryTo = State()
+    deliveryDescription = State()

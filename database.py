@@ -36,7 +36,8 @@ class DataBase:
         return self.query(f"UPDATE client SET is_courier={is_courier} WHERE chat_id={int(id)}")
 
     def delete_delivery(self, id):
-        return self.query(f"DELETE FROM 'delivery' WHERE user_id = {id} LIMIT = 1")
+        return self.query(
+            f"DELETE FROM delivery WHERE delivery_id = (SELECT max(delivery_id) FROM delivery WHERE user_id={id})")
 
     def add_location_from(self, id, latitude, longitude):
         """В базе данных сначала широта, потом долгота, разделитель _"""
@@ -57,3 +58,6 @@ class DataBase:
         coords = "_".join(list(map(str, [latitude, longitude])))
         return self.query(
             f"UPDATE delivery set delivery_to='{coords}' WHERE delivery_id={delivery_id}")
+
+    def add_description(self, delivery_id, text):
+        return self.query(f"UPDATE delivery set description='{text}' WHERE delivery_id={delivery_id}")
