@@ -28,5 +28,11 @@ def SettingsInlineButtons():
     choice = InlineKeyboardMarkup()
     change_name_button = InlineKeyboardButton("Имя", callback_data="change_name")
     change_courier_button = InlineKeyboardButton("Курьерство", callback_data="change_courier")
-    choice.add(change_courier_button, change_name_button)
+    cancel_button = InlineKeyboardButton("Отмена", callback_data="change_cancel")
+    choice.add(change_courier_button, change_name_button, cancel_button)
     return choice
+
+
+def Cancel():
+    cancel = KeyboardButton("Отменить")
+    return ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(cancel)

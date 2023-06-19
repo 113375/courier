@@ -12,3 +12,7 @@ class Changing(StatesGroup):
     changeName = State()
     changeCourier = State()
 
+
+class MakeDelivery(StatesGroup):
+    deliveryFrom = State()
+    deliveryTo = State()

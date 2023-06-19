@@ -67,6 +67,32 @@ async def add_is_courier(message: types.Message, state: FSMContext):
             await message.reply("Неверное значение.")
 
 
+@dp.message_handler(state=memstorage.MakeDelivery.deliveryTo, content_types=['location', "text"])
+async def set_location_from(message: types.Message, state: FSMContext):
+    try:
+        delivery_id = data.get_delivery_id(message.from_user.id)
+        data.add_location_to(delivery_id, message.location.latitude, message.location.longitude)
+        # await memstorage.MakeDelivery.deliveryTo.set()
+    except Exception as e:
+        if message.text.lower() == "отменить":
+            await state.finish()
+            await message.answer("Создание доставки отменено.")
+            await data.delete_delivery(message.from_user.id)
+
+
+@dp.message_handler(state=memstorage.MakeDelivery.deliveryFrom, content_types=['location', "text"])
+async def set_location_from(message: types.Message, state: FSMContext):
+    try:
+        data.add_location_from(message.from_user.id, message.location.latitude, message.location.longitude)
+        await message.answer("Отправьте геолокацию, куда нужно доставить заказ.")
+        await memstorage.MakeDelivery.deliveryTo.set()
+    except Exception as e:
+        if message.text.lower() == "отменить":
+            await state.finish()
+            await message.answer("Создание доставки отменено.")
+            # await data.delete_delivery(message.from_user.id)
+
+
 @dp.message_handler()
 async def menu_check(message: types.Message):
     text = message.text
@@ -75,7 +101,9 @@ async def menu_check(message: types.Message):
             await message.answer("Что вы хотите изменить?", reply_markup=markups.SettingsInlineButtons())
             await memstorage.Changing.begin.set()
         case "Создать доставку":
-            pass
+            await message.answer("Отправьте геолокацию, откуда необходимо доставить товар.",
+                                 reply_markup=markups.Cancel())
+            await memstorage.MakeDelivery.deliveryFrom.set()
         case _:
             await message.answer("Неизвестная команда")
 
@@ -89,22 +117,19 @@ async def change_name(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=memstorage.Changing.changeCourier)
-async def changeCourier(message: types.Message, state: FSMContext):
+async def change_courier(message: types.Message, state: FSMContext):
     match message.text.lower():
         case "да":
             data.insert_into_client_courier(message.from_user.id, True)
             await message.answer("Ваши данные изменены")
-            await state.finish()
         case "нет":
             data.insert_into_client_courier(message.from_user.id, False)
             await message.answer("Ваши данные изменены")
-            await state.finish()
-        case _:
-            await message.reply("Неверное значение.")
+    await state.finish()
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("change_"), state=memstorage.Changing.begin)
-async def changing(callback: types.CallbackQuery):
+async def changing(callback: types.CallbackQuery, state: FSMContext):
     param = callback.data.split("_")[1]
     match param:
         case "name":
@@ -115,7 +140,8 @@ async def changing(callback: types.CallbackQuery):
                                    reply_markup=markups.IsCourierButtons())
             await memstorage.Changing.changeCourier.set()
         case _:
-            print("что-то пошло не так")
+            await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
+            await state.finish()
 
 
 if __name__ == '__main__':

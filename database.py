@@ -34,3 +34,26 @@ class DataBase:
 
     def insert_into_client_courier(self, id, is_courier=False):
         return self.query(f"UPDATE client SET is_courier={is_courier} WHERE chat_id={int(id)}")
+
+    def delete_delivery(self, id):
+        return self.query(f"DELETE FROM 'delivery' WHERE user_id = {id} LIMIT = 1")
+
+    def add_location_from(self, id, latitude, longitude):
+        """В базе данных сначала широта, потом долгота, разделитель _"""
+        coords = "_".join(list(map(str, [latitude, longitude])))
+        delivery_id = self.query("SELECT max(delivery_id) FROM delivery", True)
+        if delivery_id[0][0] is None:
+            delivery_id = 0
+        else:
+            delivery_id = int(delivery_id[0][0]) + 1
+        return self.query(
+            f"INSERT INTO delivery (delivery_id, user_id, delivery_from) VALUES ({delivery_id}, {id}, '{coords}')")
+
+    def get_delivery_id(self, id):
+        return int(self.query(f"SELECT MAX(delivery_id) from delivery WHERE user_id={id}", True)[0][0])
+
+    def add_location_to(self, delivery_id, latitude, longitude):
+        """В базе данных сначала широта, потом долгота, разделитель _"""
+        coords = "_".join(list(map(str, [latitude, longitude])))
+        return self.query(
+            f"UPDATE delivery set delivery_to='{coords}' WHERE delivery_id={delivery_id}")
