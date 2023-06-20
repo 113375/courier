@@ -36,3 +36,11 @@ def SettingsInlineButtons():
 def Cancel():
     cancel = KeyboardButton("Отменить")
     return ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(cancel)
+
+
+def AcceptDelivery(delivery_id):
+    choice = InlineKeyboardMarkup()
+    accept = InlineKeyboardButton("Принять", callback_data=f"delivery_accept_{delivery_id}")
+    cancel = InlineKeyboardButton("Отклонить", callback_data=f"delivery_cancel")
+    choice.add(accept, cancel)
+    return choice

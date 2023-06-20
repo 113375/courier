@@ -61,3 +61,9 @@ class DataBase:
 
     def add_description(self, delivery_id, text):
         return self.query(f"UPDATE delivery set description='{text}' WHERE delivery_id={delivery_id}")
+
+    def get_couriers_chat_id(self):
+        return self.query("SELECT chat_id FROM client WHERE is_courier=true", True)
+
+    def get_delivery_info(self, id):
+        return self.query(f"SELECT * FROM delivery WHERE delivery_id={id}", True)[0]

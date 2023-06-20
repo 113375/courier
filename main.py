@@ -73,13 +73,27 @@ async def delete_delivery(message, state):
     data.delete_delivery(message.from_user.id)
 
 
+async def message_for_courier(message, delivery_info, courier):
+    await bot.send_message(courier[0], f"Пользователь {message.from_user.id} создал доставку:", reply_markup=markups.AcceptDelivery(delivery_info[0]))
+    location_to = delivery_info[3].split("_")
+    await bot.send_location(courier[0], location_to[0], location_to[1])
+    location_from = delivery_info[4].split("_")
+    await bot.send_message(courier[0], "До:")
+    await bot.send_location(courier[0], location_from[0], location_from[1])
+
+
 @dp.message_handler(state=memstorage.MakeDelivery.deliveryDescription)
 async def set_delivery_description(message: types.Message, state: FSMContext):
     if message.text.lower() != "отменить":
         text = message.text
-        data.add_description(data.get_delivery_id(message.from_user.id), text)
+        delivery_id = data.get_delivery_id(message.from_user.id)
+        data.add_description(delivery_id, text)
         await message.answer("Доставка создана, когда курьер его примет, вам придет уведомление.",
                              reply_markup=markups.MenuButtons())
+        couriers = data.get_couriers_chat_id()
+        delivery_info = data.get_delivery_info(delivery_id)
+        for courier in couriers:
+            await message_for_courier(message, delivery_info, courier)
         await state.finish()
     else:
         await delete_delivery(message, state)
@@ -160,6 +174,9 @@ async def changing(callback: types.CallbackQuery, state: FSMContext):
             await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
             await state.finish()
 
+
+# TODO сделать рассылку курьерам, с возможностью принять заказ после его создания
+# TODO сделать обратную связь, что заказ с такими то координатами приняли, прислать пользователя заказчику и чтобы он начал общение с ним для удобства
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
