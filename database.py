@@ -67,3 +67,6 @@ class DataBase:
 
     def get_delivery_info(self, id):
         return self.query(f"SELECT * FROM delivery WHERE delivery_id={id}", True)[0]
+
+    def add_courier_to_delivery(self, delivery_id, courier_id):
+       return self.query(f"UPDATE delivery set courier_id={courier_id} WHERE delivery_id={delivery_id}", True)

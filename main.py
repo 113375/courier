@@ -73,8 +73,27 @@ async def delete_delivery(message, state):
     data.delete_delivery(message.from_user.id)
 
 
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith("delivery_"))
+async def delivery(callback: types.CallbackQuery):
+    call = callback.data.split("_")
+    if call[1] == "cancel":
+        await bot.send_message(callback.from_user.id, "Доставка отклонена.")
+    else:
+        delivery_id = call[2]
+        info = data.get_delivery_info(delivery_id)
+        if info[2] is None:
+            data.add_courier_to_delivery(delivery_id, callback.from_user.id)
+            await bot.send_message(callback.from_user.id, "Доставка принята.")
+            user_id = info[1]
+            await bot.send_message(callback.from_user.id, "Информация по заказу: \n" + info[-1])
+            await bot.send_message(user_id, f"Пользователь {callback.from_user.url} принял доставку.")
+        else:
+            await bot.send_message(callback.from_user.id, "Доставку уже приняли.")
+
+
 async def message_for_courier(message, delivery_info, courier):
-    await bot.send_message(courier[0], f"Пользователь {message.from_user.id} создал доставку:", reply_markup=markups.AcceptDelivery(delivery_info[0]))
+    await bot.send_message(courier[0], f"Была создана доставка:",
+                           reply_markup=markups.AcceptDelivery(delivery_info[0]))
     location_to = delivery_info[3].split("_")
     await bot.send_location(courier[0], location_to[0], location_to[1])
     location_from = delivery_info[4].split("_")
@@ -92,8 +111,10 @@ async def set_delivery_description(message: types.Message, state: FSMContext):
                              reply_markup=markups.MenuButtons())
         couriers = data.get_couriers_chat_id()
         delivery_info = data.get_delivery_info(delivery_id)
+        print(couriers)
         for courier in couriers:
-            await message_for_courier(message, delivery_info, courier)
+            if courier[0] != message.from_user.id:
+                await message_for_courier(message, delivery_info, courier)
         await state.finish()
     else:
         await delete_delivery(message, state)
